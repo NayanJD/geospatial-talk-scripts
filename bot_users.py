@@ -1,5 +1,6 @@
 from shapely.geometry import Point, LineString, shape
 from functools import cmp_to_key
+from math import pi, sqrt, cos, sin
 import random
 import asyncio
 import websockets
@@ -40,6 +41,22 @@ with open(creds_file_path) as f:
 with open("./poly.json") as f:
     poly = shape(json.loads(f.read()))
 
+    center = poly.centroid
+
+    print(center.x)
+
+def get_random_point_in_circle(X, Y, R, n):
+    points = []
+    for i in range(n):
+        # print(random.uniform(0,1))
+        t = 2 * pi * random.uniform(0,1)
+        r = R * sqrt(random.uniform(0,1))
+
+        x = X + r * cos(t)
+        y = Y + r * sin(t)
+        points.append(Point(x,y))
+
+    return points
 
 def get_random_point_in_polygon(poly):
     minx, miny, maxx, maxy = poly.bounds
@@ -120,28 +137,40 @@ async def hello(thread_no):
         # for i in range(10):
         #     pt = line.interpolate(random.random(), True)
         #     lineCoords.append([pt.x, pt.y])
-        point1 = get_random_point_in_polygon(poly)
-        point2 = get_random_point_in_polygon(poly)
 
+        # Approach 2
+        # point1 = get_random_point_in_polygon(poly)
+        # point2 = get_random_point_in_polygon(poly)
+        # lineCoords = get_random_points_on_line(point1, point2)
+
+        # Approach 3
+        _, _, maxx, maxy = poly.bounds
+
+        tangent = sqrt(maxx ** 2 + maxy ** 2)
+
+        distance = center.distance(Point(maxx, maxy))
+        print('distance ', distance)
+        [point1, point2] = get_random_point_in_circle(center.x, center.y, distance, 2)
         lineCoords = get_random_points_on_line(point1, point2)
 
         i = 0
         while True:
             # [[x, y]] = generate_random(1)
 
+            # point = get_random_point_in_polygon(poly)
+            
+            #Approach 2
             [x, y] = lineCoords[i]
-
             i = (i + 1) % len(lineCoords)
 
-            # point = get_random_point_in_polygon(poly)
-
+            
             location_payload = getLatLongPayload(x, y)
 
             await websocket.send(location_payload)
 
             print(f"thread {thread_no}:: Sending coords", location_payload)
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(2)
 
 
 async def main():
