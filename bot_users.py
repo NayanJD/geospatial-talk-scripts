@@ -1,6 +1,8 @@
 from shapely.geometry import Point, LineString, shape
+from shapely.ops import transform
 from functools import cmp_to_key
 from math import pi, sqrt, cos, sin
+import pyproj
 import random
 import asyncio
 import websockets
@@ -45,18 +47,20 @@ with open("./poly.json") as f:
 
     print(center.x)
 
+
 def get_random_point_in_circle(X, Y, R, n):
     points = []
     for i in range(n):
         # print(random.uniform(0,1))
-        t = 2 * pi * random.uniform(0,1)
-        r = R * sqrt(random.uniform(0,1))
+        t = 2 * pi * random.uniform(0, 1)
+        r = R * random.uniform(0, 1)
 
         x = X + r * cos(t)
         y = Y + r * sin(t)
-        points.append(Point(x,y))
+        points.append(Point(x, y))
 
     return points
+
 
 def get_random_point_in_polygon(poly):
     minx, miny, maxx, maxy = poly.bounds
@@ -98,6 +102,19 @@ def getLatLongPayload(latitude, longitude):
     return json.dumps(
         {"type": "location_update", "latitude": latitude, "longitude": longitude}
     )
+
+
+transformCoordinateSystemTo = pyproj.Transformer.from_proj(
+    pyproj.Proj("epsg:4326"),  # source coordinate system
+    pyproj.Proj("epsg:900913"),
+    always_xy=True,
+).transform
+
+transformCoordinateSystemFrom = pyproj.Transformer.from_proj(
+    pyproj.Proj("epsg:900913"),  # source coordinate system
+    pyproj.Proj("epsg:4326"),
+    always_xy=True,
+).transform
 
 
 async def hello(thread_no):
@@ -148,9 +165,18 @@ async def hello(thread_no):
 
         tangent = sqrt(maxx ** 2 + maxy ** 2)
 
-        distance = center.distance(Point(maxx, maxy))
-        print('distance ', distance)
-        [point1, point2] = get_random_point_in_circle(center.x, center.y, distance, 2)
+        # distance = center.distance(Point(maxx, maxy))
+
+        transformedCenter = transform(transformCoordinateSystemTo, center)
+        transformedMaxPoint = transform(transformCoordinateSystemTo, Point(maxx, maxy))
+        transformedPoly = transform(transformCoordinateSystemTo, poly)
+        # print("distance ", transformedPoly.distance(transformedMaxPoint))
+        # print("center ", transformedCenter.x, transformedCenter.y)
+        distance = 10000
+        # distance = transformedCenter.distance(transformedMaxPoint)
+        [point1, point2] = get_random_point_in_circle(
+            transformedCenter.x, transformedCenter.y, distance, 2
+        )
         lineCoords = get_random_points_on_line(point1, point2)
 
         i = 0
@@ -158,13 +184,13 @@ async def hello(thread_no):
             # [[x, y]] = generate_random(1)
 
             # point = get_random_point_in_polygon(poly)
-            
-            #Approach 2
+
+            # Approach 2
             [x, y] = lineCoords[i]
             i = (i + 1) % len(lineCoords)
 
-            
-            location_payload = getLatLongPayload(x, y)
+            transformedPoint = transform(transformCoordinateSystemFrom, Point(x, y))
+            location_payload = getLatLongPayload(transformedPoint.x, transformedPoint.y)
 
             await websocket.send(location_payload)
 
