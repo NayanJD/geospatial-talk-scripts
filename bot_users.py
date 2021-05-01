@@ -40,7 +40,7 @@ with open(creds_file_path) as f:
     cred_data = json.load(f)
 
 
-with open("./poly.json") as f:
+with open("./poly1.json") as f:
     poly = shape(json.loads(f.read()))
 
     center = poly.centroid
@@ -172,12 +172,17 @@ async def hello(thread_no):
         transformedPoly = transform(transformCoordinateSystemTo, poly)
         # print("distance ", transformedPoly.distance(transformedMaxPoint))
         # print("center ", transformedCenter.x, transformedCenter.y)
-        distance = 10000
+        distance = 500
+
         # distance = transformedCenter.distance(transformedMaxPoint)
-        [point1, point2] = get_random_point_in_circle(
+
+        initial_point = None
+        final_point = None
+
+        [initial_point, final_point] = get_random_point_in_circle(
             transformedCenter.x, transformedCenter.y, distance, 2
         )
-        lineCoords = get_random_points_on_line(point1, point2)
+        lineCoords = get_random_points_on_line(initial_point, final_point)
 
         i = 0
         while True:
@@ -186,9 +191,18 @@ async def hello(thread_no):
             # point = get_random_point_in_polygon(poly)
 
             # Approach 2
-            [x, y] = lineCoords[i]
-            i = (i + 1) % len(lineCoords)
+            # i = (i + 1) % len(lineCoords)
 
+            if i == len(lineCoords):
+                initial_point = final_point
+                [final_point] = get_random_point_in_circle(
+                    transformedCenter.x, transformedCenter.y, distance, 1
+                )
+                lineCoords = get_random_points_on_line(initial_point, final_point)
+                i = 0
+
+            [x, y] = lineCoords[i]
+            
             transformedPoint = transform(transformCoordinateSystemFrom, Point(x, y))
             location_payload = getLatLongPayload(transformedPoint.x, transformedPoint.y)
 
@@ -196,7 +210,9 @@ async def hello(thread_no):
 
             print(f"thread {thread_no}:: Sending coords", location_payload)
 
-            await asyncio.sleep(2)
+            await asyncio.sleep(0.5)
+
+            i = i + 1
 
 
 async def main():
