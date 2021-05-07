@@ -20,16 +20,26 @@ parser.add_argument(
     type=str,
     help="specify credential json file. defaults to creds.json",
 )
+parser.add_argument(
+    "-r",
+    "--distance",
+    type=int,
+    help="specify distance from polygon",
+)
 
 args = parser.parse_args()
 
 no_of_threads = 1
 creds_file_path = "./creds.json"
+distance = 1000
 
 if args.threads:
     no_of_threads = args.threads
 if args.cred_dir:
     creds_file_path = args.cred_dir
+
+if args.distance:
+    distance = args.distance
 
 # print('threads:: ',args.threads)
 # print('cred-dir:: ', args.cred_dir)
@@ -172,7 +182,7 @@ async def hello(thread_no):
         transformedPoly = transform(transformCoordinateSystemTo, poly)
         # print("distance ", transformedPoly.distance(transformedMaxPoint))
         # print("center ", transformedCenter.x, transformedCenter.y)
-        distance = 500
+        # distance = 700
 
         # distance = transformedCenter.distance(transformedMaxPoint)
 

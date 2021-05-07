@@ -8,8 +8,12 @@ project = pyproj.Transformer.from_proj(
     always_xy=True,
 )  # destination coordinate system
 
-transformedPoint1 = transform(project.transform, Point(1, 1))
+transformedPoint1 = transform(project.transform, Point(77.5946, 12.9716))
 
-transformedPoint2 = transform(project.transform, Point(1, 2))
+# transformedPoint2 = transform(project.transform, Point(1, 2))
 
-print(transformedPoint1.distance(transformedPoint2))
+# print(transformedPoint1.distance(transformedPoint2))
+
+# print(round(transformedPoint1.x, 4), ',', round(transformedPoint1.y, 4))
+
+print(f'{round(transformedPoint1.x, 4)} m, {round(transformedPoint1.y, 4)} m')
